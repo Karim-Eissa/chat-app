@@ -3,11 +3,11 @@ import { useAuthStore } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 import { LogOut, MessageSquare, Settings, User, UserPlus } from 'lucide-react';
 import { useConfirmation } from '../components/ConfirmationModal';
-
+import { useFriendsStore } from '../store/useFriendStore';
 const Navbar = () => {
     const { logout, authUser } = useAuthStore();
     const requestConfirmation = useConfirmation();
-
+    const { receivedRequests } = useFriendsStore();
     const handleLogout = async () => {
         const confirm = await requestConfirmation('Are you sure you want to log out?');
         if (confirm) {
@@ -34,10 +34,22 @@ const Navbar = () => {
                         </Link>
                         {authUser && (
                             <>
-                                <Link to={"/add-friends"} className={'btn btn-sm gap-2'}>
-                                    <UserPlus className='size-5' />
-                                    <span className='hidden sm:inline'>Add</span>
-                                </Link>
+                                <div className="relative">
+                                    <Link to={"/add-friends"} className={'btn btn-sm gap-2'}>
+                                        <UserPlus className='size-5' />
+                                        <span className='hidden sm:inline'>Add</span>
+                                    </Link>
+
+                                    {receivedRequests.length > 0 && (
+                                        <span
+                                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white 
+                                        text-[10px] font-bold rounded-full flex items-center justify-center shadow ring-2 ring-base-100"
+                                        >
+                                        {receivedRequests.length > 99 ? "99+" : receivedRequests.length}
+                                        </span>
+                                    )}
+                                </div>
+
                                 <Link to={"/profile"} className={'btn btn-sm gap-2'}>
                                     <User className='size-5' />
                                     <span className='hidden sm:inline'>Profile</span>

@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
-
+import { useFriendsStore } from "./useFriendStore";
+import { useChatStore } from "./useChatStore";
 const BASE_URL = "http://localhost:3000";
 
 export const useAuthStore = create((set, get) => ({
@@ -18,6 +19,8 @@ export const useAuthStore = create((set, get) => ({
             const res = await axiosInstance.get("/auth/check");
             set({ authUser: res.data.data });
             get().connectSocket();
+            useFriendsStore.getState().initializeSocketListeners();
+            useChatStore.getState().listenToAllMessages();
         } catch (error) {
             console.log("Error in checkAuth", error);
             set({ authUser: null });
@@ -42,9 +45,9 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoggingIn: true });
         try {
             const res = await axiosInstance.post("/auth/login", data);
-            set({ authUser: res.data });
+            set({ authUser: res.data.data });
             toast.success("Logged in successfully");
-            get().connectSocket();
+            await get().checkAuth();
         } catch (error) {
             toast.error(error.response?.data?.message || "Login failed");
         } finally {
@@ -56,6 +59,7 @@ export const useAuthStore = create((set, get) => ({
         try {
             await axiosInstance.post("/auth/logout");
             set({ authUser: null });
+            useChatStore.getState().setSelectedUser(null);
             toast.success("Logged out successfully");
             get().disconnectSocket();
         } catch (error) {
@@ -64,14 +68,18 @@ export const useAuthStore = create((set, get) => ({
     },
 
     connectSocket: () => {
-        const { authUser } = get();
-        if (!authUser || get().socket) return;
+        const { authUser, socket } = get();
+        if (!authUser) return;
 
-        const socket = io(BASE_URL, { query: { userId: authUser._id } });
-        socket.connect();
-        set({ socket });
+        // ✅ Close any existing socket connection before reconnecting
+        if (socket) {
+            socket.disconnect();
+        }
+        const newSocket = io(BASE_URL, { query: { userId: authUser._id } });
+        newSocket.connect();
+        set({ socket:newSocket });
 
-        socket.on("getOnlineUsers", (usersIds) => {
+        newSocket.on("getOnlineUsers", (usersIds) => {
             set({ onlineUsers: usersIds });
         });
     },
@@ -79,7 +87,7 @@ export const useAuthStore = create((set, get) => ({
         set({ isUpdatingProfile: true });
         try {
             const res = await axiosInstance.put('/auth/update-profile', data);
-            set((state) => ({ authUser: { ...state.authUser, ...res.data } })); // Merge old and new data
+            set((state) => ({ authUser: { ...state.authUser, ...res.data } }));
             toast.success("Profile updated successfully");
         } catch (error) {
             console.log("Error in updating profile", error);

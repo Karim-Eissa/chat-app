@@ -1,19 +1,16 @@
-import React, { useEffect } from 'react';
-import { Search, UserMinus, UserPlus, CheckCircle, XCircle } from 'lucide-react';
-import { useAuthStore } from '../store/useAuthStore';
-import { useFriendsStore } from '../store/useFriendStore'; // Import the new store
-import { useConfirmation } from '../components/ConfirmationModal';
+import React, { useEffect } from "react";
+import { Search, UserMinus, UserPlus, CheckCircle, XCircle } from "lucide-react";
+import { useAuthStore } from "../store/useAuthStore";
+import { useFriendsStore } from "../store/useFriendStore"; // ✅ Fixed import
+import { useConfirmation } from "../components/ConfirmationModal";
 
 const AddFriends = () => {
   const confirmAction = useConfirmation();
-  
-  // Authentication-related state (if needed)
   const { authUser } = useAuthStore();
 
-  // Friends-related state & actions
   const {
     friends,
-    recievedRequests,
+    receivedRequests, // ✅ Fixed spelling
     sentRequests,
     sendFriendRequest,
     cancelFriendRequest,
@@ -22,41 +19,43 @@ const AddFriends = () => {
     removeFriend,
     fetchFriends,
     fetchSentRequests,
-    fetchRecievedRequests,
+    fetchReceivedRequests, // ✅ Fixed spelling
     searchQuery,
     setSearchQuery,
     searchResults,
     searchUsers,
     isSearchingUsers,
-  } = useFriendsStore(); // Use friends store instead of auth store
+  } = useFriendsStore();
 
   useEffect(() => {
     fetchFriends();
     fetchSentRequests();
-    fetchRecievedRequests();
-  }, []);
+    fetchReceivedRequests();
+  }, [fetchFriends, fetchSentRequests, fetchReceivedRequests]); // ✅ Dependency fix
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       searchUsers(searchQuery);
     }, 500);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [searchQuery, searchUsers]); // ✅ Added `searchUsers` to dependency array
 
   const handleAction = async (action, message, id) => {
     const confirmed = await confirmAction(message);
     if (confirmed) action(id);
   };
 
+  if (!authUser) return <p className="text-center">Loading...</p>; // ✅ Ensure authUser exists
+
   return (
     <div className="min-h-screen bg-base-200 flex justify-center pt-20 px-4">
       <div className="bg-base-100 rounded-lg shadow-lg w-full max-w-5xl min-h-[70vh] flex flex-col lg:flex-row gap-4 p-4">
-        
+
         {/* Friend Requests & Friends List */}
         <div className="w-full lg:w-1/3 border border-base-300 p-4 rounded-lg">
           <h2 className="text-lg font-semibold mb-4">Friend Requests</h2>
-          {recievedRequests?.length > 0 ? (
-            recievedRequests.map((request) => (
+          {receivedRequests?.length > 0 ? (
+            receivedRequests.map((request) => (
               <div key={request._id} className="flex items-center justify-between p-3 hover:bg-base-300 rounded-lg">
                 <span className="truncate max-w-[150px]">{request.fullName}</span>
                 <div className="flex gap-2">

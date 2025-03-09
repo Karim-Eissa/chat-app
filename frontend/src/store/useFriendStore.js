@@ -1,11 +1,13 @@
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
-
+import { useAuthStore } from "./useAuthStore";
+import { showMessageToast } from "../utils/showMessageToast.jsx";
+import { useChatStore } from "./useChatStore";
 export const useFriendsStore = create((set, get) => ({
     friends: [],
     sentRequests: [],
-    recievedRequests: [],
+    receivedRequests: [],
     searchQuery: "",
     searchResults: [],
     isSearchingUsers: false,
@@ -28,10 +30,10 @@ export const useFriendsStore = create((set, get) => ({
         }
     },
 
-    fetchRecievedRequests: async () => {
+    fetchReceivedRequests: async () => {
         try {
             const res = await axiosInstance.get("/friends/received-requests");
-            set({ recievedRequests: res.data });
+            set({ receivedRequests: res.data });
         } catch (error) {
             console.log("Error fetching received requests", error);
         }
@@ -61,11 +63,12 @@ export const useFriendsStore = create((set, get) => ({
         try {
             await axiosInstance.post(`/friends/accept-request/${friendId}`);
             set((state) => ({
-                friends: [...state.friends, state.recievedRequests.find(req => req._id === friendId)],
-                recievedRequests: state.recievedRequests.filter(req => req._id !== friendId),
+                friends: [...state.friends, state.receivedRequests.find(req => req._id === friendId)],
+                receivedRequests: state.receivedRequests.filter(req => req._id !== friendId),
             }));
+            toast.success("Friend request accepted");
         } catch (error) {
-            console.error("Error accepting friend request:", error);
+            toast.error(error.response?.data?.message || "Failed to accept request");
         }
     },
 
@@ -73,7 +76,7 @@ export const useFriendsStore = create((set, get) => ({
         try {
             await axiosInstance.post(`/friends/reject-request/${userId}`);
             set((state) => ({
-                recievedRequests: state.recievedRequests.filter((req) => req._id !== userId),
+                receivedRequests: state.receivedRequests.filter((req) => req._id !== userId),
             }));
             toast.success("Friend request rejected");
         } catch (error) {
@@ -108,5 +111,51 @@ export const useFriendsStore = create((set, get) => ({
         } finally {
             set({ isSearchingUsers: false });
         }
+    },
+
+    // ✅ Handle Socket Events
+    initializeSocketListeners: () => {
+        const { socket } = useAuthStore.getState();
+        if (!socket) return;
+        socket.on("friend-request-received", ({ from,fullName, profilePic }) => {
+            set((state) => ({ receivedRequests: [...state.receivedRequests, { _id: from,fullName, profilePic }] }));
+            console.log("request recieved")
+            showMessageToast({text:"Sent you a friend request!"},{fullName,profilePic});
+        });
+
+        socket.on("friend-request-accepted", ({ from,fullName, profilePic }) => {
+            set((state) => ({
+                friends: [...state.friends, { _id: from,fullName, profilePic }],
+                sentRequests: state.sentRequests.filter(req => req._id !== from),
+            }));
+            console.log("request accepted")
+            showMessageToast({text:"Accepted your friend request!"},{fullName,profilePic});
+        });
+
+        socket.on("friend-request-rejected", ({ from }) => {
+            set((state) => ({
+                sentRequests: state.sentRequests.filter(req => req._id !== from),
+            }));
+            console.log("request rejected")
+        });
+
+        socket.on("friend-request-canceled", ({ from }) => {
+            set((state) => ({
+                receivedRequests: state.receivedRequests.filter(req => req._id !== from),
+            }));
+            console.log("request cancelled")
+        });
+
+        socket.on("friend-removed", ({ from }) => {
+            set((state) => ({
+                friends: state.friends.filter(friend => friend._id !== from),
+            }));
+            const { selectedUser, setSelectedUser } = useChatStore.getState();
+            console.log(selectedUser,from)
+            if (selectedUser?._id === from) {
+                setSelectedUser(null);
+            }
+            console.log("friend removed")
+        });
     },
 }));

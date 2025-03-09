@@ -17,7 +17,7 @@ export const sendVerificationEmail = async (email, token) => {
         subject: "Verify Your Email",
         html: `<h2>Welcome to the Chat App!</h2>
                <p>Click the link below to verify your email:</p>
-               <a href="${link}" target="_blank">${link}</a>`,
+               <a href="${link}" target="_blank">Click here</a>`,
     };
 
     await transporter.sendMail(mailOptions);

@@ -2,6 +2,8 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "./useAuthStore";
+import { showMessageToast } from "../utils/showMessageToast.jsx";
+import { useFriendsStore } from "./useFriendStore";
 
 export const useChatStore = create((set, get) => ({
   messages: [],
@@ -33,27 +35,52 @@ export const useChatStore = create((set, get) => ({
       set({ isMessagesLoading: false });
     }
   },
-  sendMessage:async(messageData)=>{
-    const {selectedUser,messages}=get()
+
+  sendMessage: async (messageData) => {
+    const { selectedUser, messages } = get();
     try {
-        const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`,messageData);
-        set({ messages: [...messages,res.data] });
+      const res = await axiosInstance.post(
+        `/messages/send/${selectedUser._id}`,
+        messageData
+      );
+      set({ messages: [...messages, res.data] });
     } catch (error) {
-        toast.error(error.response.data.message);
+      toast.error(error.response.data.message);
     }
   },
   subscribeToMessages:()=>{
     const {selectedUser}=get();
     if(!selectedUser) return;
     const socket=useAuthStore.getState().socket;
-    socket.on("newMessage",(newMessage)=>{
+    socket.off("newChatMessage");
+    socket.on("newChatMessage",(newMessage)=>{
         if(newMessage.senderId !== selectedUser._id) return;
         set({messages:[...get().messages,newMessage]})
     })
   },
-  unsubscribeFromMessages:()=>{
-    const socket=useAuthStore.getState().socket;
-    socket.off("newMessage")
+  listenToAllMessages: () => {
+    const socket = useAuthStore.getState().socket;
+    const { authUser } = useAuthStore.getState();
+    if (!authUser) return;
+    socket.off("newGlobalMessage");
+    socket.on("newGlobalMessage", (newMessage) => {
+      const { selectedUser } = get();
+      if (newMessage.receiverId !== authUser._id) return;
+      if (selectedUser?._id === newMessage.senderId) return;
+      console.log(selectedUser,newMessage.senderId)
+      console.log("📩 Incoming global message:", newMessage);
+  
+      const sender = useFriendsStore.getState().friends.find(
+        (friend) => friend._id === newMessage.senderId
+      );
+      console.log("sender:",sender)
+      showMessageToast(newMessage, sender);
+    });
   },
+  unsubscribeFromMessages: () => {
+    const socket = useAuthStore.getState().socket;
+    socket.off("newChatMessage");
+  },
+
   setSelectedUser: (selectedUser) => set({ selectedUser }),
 }));

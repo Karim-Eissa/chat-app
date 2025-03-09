@@ -5,6 +5,8 @@ import { Image, Send, X } from 'lucide-react';
 const MessageInput = () => {
   const [text,setText]=useState("");
   const [imagePreview,setImagePreview]=useState(null);
+  const [isCooldown, setIsCooldown] = useState(false);
+  const lastSentTimeRef = useRef(0);
   const fileInputRef=useRef(null);
   const {sendMessage} =useChatStore();
   const handleImageChange=(e)=>{
@@ -26,22 +28,33 @@ const MessageInput = () => {
   const handleSendMessage=async(e)=>{
     e.preventDefault();
     if(!text.trim() && !imagePreview) return;
+    const now = Date.now();
+    const timeSinceLastMessage = now - lastSentTimeRef.current;
+
+    if (timeSinceLastMessage < 2000) {
+      toast.error("Please wait 1 second before sending another message.");
+      return;
+    }
     try {
       await sendMessage({
         text: text.trim(),
         image: imagePreview,
       });
-
-      // Clear form
       setText("");
+      lastSentTimeRef.current = Date.now();
+      setIsCooldown(true);
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      setTimeout(() => {
+        setIsCooldown(false);
+      }, 2000);
     } catch (error) {
       console.error("Failed to send message:", error);
       setText("");
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       toast.error("Message not sent");
+      setIsCooldown(false);
     }
   }
   return (
@@ -93,7 +106,7 @@ const MessageInput = () => {
         <button
           type="submit"
           className="btn btn-sm btn-circle"
-          disabled={!text.trim() && !imagePreview}
+          disabled={(!text.trim() && !imagePreview) || isCooldown}
         >
           <Send size={22} />
         </button>
