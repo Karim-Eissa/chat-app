@@ -11,11 +11,12 @@ const Sidebar = () => {
     setSelectedUser,
     isUsersLoading,
     unseenMessages,
+    isTyping
   } = useChatStore();
 
   const { friends, fetchFriends } = useFriendsStore();
   const { onlineUsers } = useAuthStore();
-
+  
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
   useEffect(() => {

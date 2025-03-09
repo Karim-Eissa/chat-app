@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { useChatStore } from '../store/useChatStore';
 import { Image, Send, X } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
 
 const MessageInput = () => {
   const [text,setText]=useState("");
@@ -8,7 +9,8 @@ const MessageInput = () => {
   const [isCooldown, setIsCooldown] = useState(false);
   const lastSentTimeRef = useRef(0);
   const fileInputRef=useRef(null);
-  const {sendMessage} =useChatStore();
+  const {sendMessage,selectedUser} =useChatStore();
+  const { socket, authUser } = useAuthStore();
   const handleImageChange=(e)=>{
     const file=e.target.files[0];
     if(!file.type.startsWith("image/")){
@@ -21,17 +23,34 @@ const MessageInput = () => {
     };
     reader.readAsDataURL(file);
   }
+
+  const handleInputChange = (e) => {
+    if (!selectedUser) {
+      toast.error("No user selected!");
+      return;
+    }    
+    setText(e.target.value);
+    socket.emit("typing", {
+      receiverId: selectedUser._id,
+      senderId: authUser._id,
+    });
+  };
+
   const removeImage=()=>{
     setImagePreview(null);
     if(fileInputRef.current) fileInputRef.current.value="";
   }
+
   const handleSendMessage=async(e)=>{
     e.preventDefault();
     if(!text.trim() && !imagePreview) return;
     const now = Date.now();
     const timeSinceLastMessage = now - lastSentTimeRef.current;
-
-    if (timeSinceLastMessage < 2000) {
+    if (!selectedUser) {
+      toast.error("No user selected!");
+      return;
+    }    
+    if (timeSinceLastMessage < 1000) {
       toast.error("Please wait 1 second before sending another message.");
       return;
     }
@@ -40,6 +59,7 @@ const MessageInput = () => {
         text: text.trim(),
         image: imagePreview,
       });
+      useChatStore.getState().clearTyping();
       setText("");
       lastSentTimeRef.current = Date.now();
       setIsCooldown(true);
@@ -47,7 +67,7 @@ const MessageInput = () => {
       if (fileInputRef.current) fileInputRef.current.value = "";
       setTimeout(() => {
         setIsCooldown(false);
-      }, 2000);
+      }, 1000);
     } catch (error) {
       console.error("Failed to send message:", error);
       setText("");
@@ -85,7 +105,7 @@ const MessageInput = () => {
             className='w-full input input-bordered rounded-lg input-sm sm:input:md'
             placeholder='Type a message...'
             value={text}
-            onChange={(e)=>{setText(e.target.value)}}  
+            onChange={handleInputChange}
           />
           <input 
             type='file'

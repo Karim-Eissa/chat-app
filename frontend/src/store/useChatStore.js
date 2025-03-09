@@ -12,9 +12,10 @@ export const useChatStore = create((set, get) => ({
   isUsersLoading: false,
   isMessagesLoading: false,
   unseenMessages: {},
+  isTyping: false,
+  typingTimeout: null,
 
-  
-
+  setIsTyping: (status) => set({ isTyping: status }),
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {
@@ -95,13 +96,40 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
     socket.off("newChatMessage");
   },
+  listenToTyping: () => {
+    const socket = useAuthStore.getState().socket;
+    const { selectedUser } = get();
 
+    socket.off("typing");
+
+    socket.on("typing", ({ senderId }) => {
+      if (selectedUser && senderId === selectedUser._id) {
+        set({ isTyping: true });
+
+        const existingTimeout = get().typingTimeout;
+        if (existingTimeout) clearTimeout(existingTimeout);
+
+        const timeout = setTimeout(() => {
+          set({ isTyping: false });
+        }, 3000);
+
+        set({ typingTimeout: timeout });
+      }
+    });
+  },
+
+  clearTyping: () => {
+    clearTimeout(get().typingTimeout);
+    set({ isTyping: false });
+  },
   setSelectedUser: (selectedUser) => {
-    const { unsubscribeFromMessages, subscribeToMessages, clearUnseenMessages } = get();
+    const { unsubscribeFromMessages, subscribeToMessages, clearUnseenMessages, listenToTyping, clearTyping } = get();
   
     unsubscribeFromMessages();  
+    clearTyping();
     set({ selectedUser });      
-    subscribeToMessages();      
+    subscribeToMessages();     
+    listenToTyping(); 
     if(selectedUser!=null){
       clearUnseenMessages(selectedUser._id);
     }
