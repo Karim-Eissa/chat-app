@@ -11,6 +11,9 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  unseenMessages: {},
+
+  
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -64,12 +67,12 @@ export const useChatStore = create((set, get) => ({
     if (!authUser) return;
     socket.off("newGlobalMessage");
     socket.on("newGlobalMessage", (newMessage) => {
-      const { selectedUser } = get();
+      const { selectedUser,addUnseenMessage  } = get();
       if (newMessage.receiverId !== authUser._id) return;
       if (selectedUser?._id === newMessage.senderId) return;
       console.log(selectedUser,newMessage.senderId)
       console.log("📩 Incoming global message:", newMessage);
-  
+      addUnseenMessage(newMessage.senderId);
       const sender = useFriendsStore.getState().friends.find(
         (friend) => friend._id === newMessage.senderId
       );
@@ -77,10 +80,30 @@ export const useChatStore = create((set, get) => ({
       showMessageToast(newMessage, sender);
     });
   },
+  addUnseenMessage: (senderId) => {
+    const unseenMessages = { ...get().unseenMessages };
+    unseenMessages[senderId] = (unseenMessages[senderId] || 0) + 1;
+    set({ unseenMessages });
+  },
+
+  clearUnseenMessages: (userId) => {
+    const unseenMessages = { ...get().unseenMessages };
+    delete unseenMessages[userId];
+    set({ unseenMessages });
+  },
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     socket.off("newChatMessage");
   },
 
-  setSelectedUser: (selectedUser) => set({ selectedUser }),
+  setSelectedUser: (selectedUser) => {
+    const { unsubscribeFromMessages, subscribeToMessages, clearUnseenMessages } = get();
+  
+    unsubscribeFromMessages();  
+    set({ selectedUser });      
+    subscribeToMessages();      
+    if(selectedUser!=null){
+      clearUnseenMessages(selectedUser._id);
+    }
+  }, 
 }));
