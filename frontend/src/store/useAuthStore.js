@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import { useFriendsStore } from "./useFriendStore";
 import { useChatStore } from "./useChatStore";
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = "https://chatty-egypt.duckdns.org";
 
 export const useAuthStore = create((set, get) => ({
     authUser: null,
@@ -115,7 +115,7 @@ export const useAuthStore = create((set, get) => ({
         if (socket) {
             socket.disconnect();
         }
-        const newSocket = io(BASE_URL, { query: { userId: authUser._id } });
+        const newSocket = io(BASE_URL, { query: { userId: authUser._id }, transports: ["websocket"],withCredentials: true });
         newSocket.connect();
         set({ socket:newSocket });
 
