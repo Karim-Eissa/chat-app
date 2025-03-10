@@ -114,9 +114,9 @@ export default {
         const { token } = req.params;
         console.log("token:",token)
         try {
-            const user = await User.findOne({ resetPasswordToken: token });
+            const user = await User.findOne({ verificationToken: token });
             if (!user) return sendResponse(res, 400, false, "Invalid or expired token");
-            user.resetPasswordToken = undefined;
+            user.verificationToken = undefined;
             await user.save();
             res.redirect(`${process.env.ORIGIN}/login`);
         } catch (error) {
