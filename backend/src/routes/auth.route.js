@@ -5,7 +5,10 @@ const router=express.Router();
 router.post("/signup", authController.signup_post)
 router.post("/login", authController.login_post)
 router.post("/logout", authController.logout_post)
+router.post("/forgot-password", authController.forgotPassword_post);
+router.post("/reset-password/:token", authController.resetPassword_post);
 router.put("/update-profile", protectRoute,authController.updateProfile_put)
 router.get("/check",protectRoute,authController.checkAuth_get)
 router.get("/verify/:token", authController.verifyEmail_get);
+
 export default router;

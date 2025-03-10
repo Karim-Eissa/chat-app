@@ -94,13 +94,17 @@ export const useChatStore = create((set, get) => ({
   },
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
-    socket.off("newChatMessage");
+    if(socket){
+      socket.off("newChatMessage");
+    }
   },
   listenToTyping: () => {
     const socket = useAuthStore.getState().socket;
     const { selectedUser } = get();
 
-    socket.off("typing");
+    if(socket){
+      socket.off("typing");
+    }
 
     socket.on("typing", ({ senderId }) => {
       if (selectedUser && senderId === selectedUser._id) {
@@ -128,9 +132,9 @@ export const useChatStore = create((set, get) => ({
     unsubscribeFromMessages();  
     clearTyping();
     set({ selectedUser });      
-    subscribeToMessages();     
-    listenToTyping(); 
     if(selectedUser!=null){
+      subscribeToMessages();
+      listenToTyping(); 
       clearUnseenMessages(selectedUser._id);
     }
   }, 

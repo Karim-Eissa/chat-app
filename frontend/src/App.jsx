@@ -10,6 +10,8 @@ import LoginPage from "./pages/LoginPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import AddFriends from "./pages/AddFriends";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 import { useAuthStore } from "./store/useAuthStore";
 import { Toaster } from "react-hot-toast";
@@ -40,6 +42,8 @@ const App = () => {
           <Route path="/" element={authUser ? <HomePage /> : <Navigate to="/login" />} />
           <Route path="/signup" element={!authUser ? <SignUpPage /> : <Navigate to="/" />} />
           <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to="/" />} />
+          <Route path="/forgot-pass" element={!authUser ? <ForgotPassword /> : <Navigate to="/" />} />
+          <Route path="/reset-pass/:token" element={!authUser ? <ResetPassword /> : <Navigate to="/" />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile" element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
           <Route path="/add-friends" element={authUser ? <AddFriends /> : <Navigate to="/login" />} />

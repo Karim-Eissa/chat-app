@@ -3,7 +3,7 @@ import User from "../models/user.model.js";
 import { generateToken } from "../lib/utils.js";
 import cloudinary from "../lib/cloudinary.js";
 import crypto from "crypto";
-import { sendVerificationEmail } from "../lib/mailer.js";
+import { sendVerificationEmail,sendPasswordRecoveryEmail } from "../lib/mailer.js";
 import sendResponse from "../utils/responseHandler.js";
 import { validateSignup, validateLogin, validateProfileUpdate } from "../utils/validation.js";
 
@@ -66,17 +66,57 @@ export default {
             sendResponse(res, 500, false, "Internal Server Error");
         }
     },
-
+    forgotPassword_post:async (req,res)=>{
+        try {
+            const { email } = req.body;
+            const user = await User.findOne({ email });
+            if (!user) return res.status(404).json({ message: "User not found" });
+            const resetToken = crypto.randomBytes(32).toString('hex');
+            const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+            user.resetPasswordToken = hashedToken;
+            user.resetPasswordExpires = Date.now() + 1000 * 60 * 15;
+            await user.save();
+            await sendPasswordRecoveryEmail(user.email,hashedToken);
+            res.json({ message: 'Password reset email sent' });
+        } catch (error) {
+            console.log("Error in forgotPassword controller", error.message);
+            sendResponse(res, 500, false, "Internal Server Error");
+        }
+    },
+    resetPassword_post: async (req, res) => {
+        const { token } = req.params;
+        const { password, confirmPassword } = req.body;
+        console.log(token,password,confirmPassword)
+        try {
+            if (password !== confirmPassword) {
+                return sendResponse(res, 400, false, "Passwords do not match");
+            }    
+            const user = await User.findOne({
+                resetPasswordToken: token,
+                resetPasswordExpires: { $gt: Date.now() }
+            });
+            if (!user) {
+                return sendResponse(res, 400, false, "Invalid or expired token");
+            }
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(password, salt);
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpires = undefined;
+            await user.save();
+            sendResponse(res, 200, true, "Password reset successful");
+        } catch (error) {
+            console.log("Error in resetPassword controller", error.message);
+            sendResponse(res, 500, false, "Internal Server Error");
+        }
+    },
+    
     verifyEmail_get: async (req, res) => {
         const { token } = req.params;
         try {
-            const user = await User.findOne({ verificationToken: token });
+            const user = await User.findOne({ resetPasswordToken: token });
             if (!user) return sendResponse(res, 400, false, "Invalid or expired token");
-
-            user.isVerified = true;
-            user.verificationToken = undefined;
+            user.resetPasswordToken = undefined;
             await user.save();
-
             res.redirect(`${process.env.ORIGIN}/login`);
         } catch (error) {
             console.log("Error in email verification", error.message);

@@ -22,3 +22,18 @@ export const sendVerificationEmail = async (email, token) => {
 
     await transporter.sendMail(mailOptions);
 };
+export const sendPasswordRecoveryEmail = async (email, token) => {
+    const link = `${process.env.ORIGIN}/reset-pass/${token}`;  
+
+    const mailOptions = {
+        from: process.env.EMAIL,
+        to: email,
+        subject: "Recover Your Account",
+        html: `<h2>Forgot your password?</h2>
+               <p>No worries at all! Click the link below to set your new password:</p>
+               <a href="${link}" target="_blank">Click here</a>
+               <p>This link will expire soon!</p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+};

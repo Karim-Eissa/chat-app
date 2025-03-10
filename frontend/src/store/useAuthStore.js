@@ -11,6 +11,9 @@ export const useAuthStore = create((set, get) => ({
     isSigningUp: false,
     isLoggingIn: false,
     isCheckingAuth: true,
+    isSendingRecovery: false,
+    isChangingPass: false,
+    isUpdatingProfile: false,
     socket: null,
     onlineUsers: [],
 
@@ -66,7 +69,44 @@ export const useAuthStore = create((set, get) => ({
             toast.error(error.response?.data?.message || "Logout failed");
         }
     },
+    forgotPassword: async (email) => {
+        set({ isSendingRecovery: true });
+        try {
+            await axiosInstance.post("/auth/forgot-password", { email });
+            toast.success("Password recovery email sent! Check your inbox.");
+        } catch (error) {
+            console.log("Error in forgotPassword", error);
+            toast.error(error.response?.data?.message || "Failed to send recovery email");
+        } finally {
+            set({ isSendingRecovery: false });
+        }
+    },
 
+    // ✅ Reset Password
+    resetPassword: async ({ token, password, confirmPassword }) => {
+        set({ isChangingPass: true });
+        try {
+            if (password !== confirmPassword) {
+                toast.error("Passwords do not match");
+                return;
+            }
+
+            const res=await axiosInstance.post(`/auth/reset-password/${token}`, { password,confirmPassword });
+            if (res.data.success) {
+                toast.success("Password changed successfully! You can now log in.");
+                return true; // Explicitly return true!
+              } else {
+                toast.error(res.data.message || "Something went wrong");
+                return false;
+              }
+        } catch (error) {
+            console.log("Error in resetPassword", error);
+            toast.error(error.response?.data?.message || "Password reset failed");
+            return false;
+        } finally {
+            set({ isChangingPass: false });
+        }
+    },
     connectSocket: () => {
         const { authUser, socket } = get();
         if (!authUser) return;

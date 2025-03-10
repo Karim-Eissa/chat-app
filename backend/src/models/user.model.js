@@ -27,6 +27,15 @@ const userSchema = new mongoose.Schema(
         verificationToken: { 
             type: String 
         },
+        verificationToken: { 
+            type: String 
+        },
+        resetPasswordToken:{
+            type: String 
+        },
+        resetPasswordExpires:{
+            type: Date
+        },
         friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
         friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
         sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],  
