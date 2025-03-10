@@ -6,7 +6,7 @@ export default {
     getUsersForSidebar_get: async(req, res) => {
       try {
         const user = await User.findById(req.user._id).populate("friends", "_id fullName profilePic");
-        console.log(user.friends);
+        
         res.status(200).json(user.friends);
       } catch (error) {
         console.error("Error in getUsersForSidebar: ", error.message);
@@ -27,7 +27,7 @@ export default {
             
             res.status(200).json(messages);
           } catch (error) {
-            console.log("Error in getMessages controller: ", error.message);
+            
             res.status(500).json({ message: "Internal server error" });
           }
     },
@@ -64,7 +64,7 @@ export default {
           }
           res.status(201).json(newMessage);
       } catch (error) {
-          console.log("Error in sendMessage controller: ", error.message);
+          
           res.status(500).json({ message: "Internal server error" });
       }
   }

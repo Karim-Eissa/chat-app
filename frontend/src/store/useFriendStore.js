@@ -17,7 +17,7 @@ export const useFriendsStore = create((set, get) => ({
             const res = await axiosInstance.get("/friends");
             set({ friends: res.data });
         } catch (error) {
-            console.log("Error fetching friends", error);
+            
         }
     },
 
@@ -26,7 +26,7 @@ export const useFriendsStore = create((set, get) => ({
             const res = await axiosInstance.get("/friends/sent-requests");
             set({ sentRequests: res.data });
         } catch (error) {
-            console.log("Error fetching sent requests", error);
+            
         }
     },
 
@@ -35,7 +35,7 @@ export const useFriendsStore = create((set, get) => ({
             const res = await axiosInstance.get("/friends/received-requests");
             set({ receivedRequests: res.data });
         } catch (error) {
-            console.log("Error fetching received requests", error);
+            
         }
     },
 

@@ -30,7 +30,7 @@ export default {
 
             sendResponse(res, 201, true, "User created. Check email for verification link.");
         } catch (error) {
-            console.log("Error in signup controller", error.message);
+            
             sendResponse(res, 500, false, "Internal server error");
         }
     },
@@ -52,7 +52,7 @@ export default {
                 profilePic: user.profilePic,
             });
         } catch (error) {
-            console.log("Error in login", error.message);
+            
             sendResponse(res, 500, false, "Internal server error");
         }
     },
@@ -62,7 +62,7 @@ export default {
             res.cookie("jwt", "", { maxAge: 0 });
             sendResponse(res, 200, true, "Logged out successfully");
         } catch (error) {
-            console.log("Error in logout controller", error.message);
+            
             sendResponse(res, 500, false, "Internal Server Error");
         }
     },
@@ -79,7 +79,7 @@ export default {
             await sendPasswordRecoveryEmail(user.email,hashedToken);
             res.json({ message: 'Password reset email sent' });
         } catch (error) {
-            console.log("Error in forgotPassword controller", error.message);
+            
             sendResponse(res, 500, false, "Internal Server Error");
         }
     },
@@ -105,7 +105,7 @@ export default {
             await user.save();
             sendResponse(res, 200, true, "Password reset successful");
         } catch (error) {
-            console.log("Error in resetPassword controller", error.message);
+            
             sendResponse(res, 500, false, "Internal Server Error");
         }
     },
@@ -119,7 +119,7 @@ export default {
             await user.save();
             res.redirect(`${process.env.ORIGIN}/login`);
         } catch (error) {
-            console.log("Error in email verification", error.message);
+            
             sendResponse(res, 500, false, "Internal server error");
         }
     },
@@ -142,7 +142,7 @@ export default {
 
             sendResponse(res, 200, true, "Profile updated successfully", updatedUser);
         } catch (error) {
-            console.log("Error in update profile", error.message);
+            
             sendResponse(res, 500, false, "Internal Server Error");
         }
     },
@@ -151,7 +151,7 @@ export default {
         try {
             sendResponse(res, 200, true, "Authenticated user", req.user);
         } catch (error) {
-            console.log("Error in checkAuth controller", error.message);
+            
             sendResponse(res, 500, false, "Internal Server Error");
         }
     }

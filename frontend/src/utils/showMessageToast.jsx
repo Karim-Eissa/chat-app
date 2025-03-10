@@ -2,7 +2,7 @@ import toast from "react-hot-toast";
 import MessageToast from "../components/MessageToast";
 
 export const showMessageToast = (newMessage, selectedUser = {}) => {
-  console.log("🔔 Showing toast for message:", newMessage);
+  
 
   let messageText = "Sent a message"; 
 

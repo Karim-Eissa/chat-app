@@ -72,7 +72,7 @@ export const useChatStore = create((set, get) => ({
       if (newMessage.receiverId !== authUser._id) return;
       if (selectedUser?._id === newMessage.senderId) return;
       console.log(selectedUser,newMessage.senderId)
-      console.log("📩 Incoming global message:", newMessage);
+      
       addUnseenMessage(newMessage.senderId);
       const sender = useFriendsStore.getState().friends.find(
         (friend) => friend._id === newMessage.senderId

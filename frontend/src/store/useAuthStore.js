@@ -25,7 +25,7 @@ export const useAuthStore = create((set, get) => ({
             useFriendsStore.getState().initializeSocketListeners();
             useChatStore.getState().listenToAllMessages();
         } catch (error) {
-            console.log("Error in checkAuth", error);
+            
             set({ authUser: null });
         } finally {
             set({ isCheckingAuth: false });
@@ -75,7 +75,7 @@ export const useAuthStore = create((set, get) => ({
             await axiosInstance.post("/auth/forgot-password", { email });
             toast.success("Password recovery email sent! Check your inbox.");
         } catch (error) {
-            console.log("Error in forgotPassword", error);
+            
             toast.error(error.response?.data?.message || "Failed to send recovery email");
         } finally {
             set({ isSendingRecovery: false });
@@ -100,7 +100,7 @@ export const useAuthStore = create((set, get) => ({
                 return false;
               }
         } catch (error) {
-            console.log("Error in resetPassword", error);
+            
             toast.error(error.response?.data?.message || "Password reset failed");
             return false;
         } finally {
@@ -130,7 +130,7 @@ export const useAuthStore = create((set, get) => ({
             set((state) => ({ authUser: { ...state.authUser, ...res.data } }));
             toast.success("Profile updated successfully");
         } catch (error) {
-            console.log("Error in updating profile", error);
+            
             toast.error(error.response?.data?.message || "Profile update failed");
         } finally {
             set({ isUpdatingProfile: false });
