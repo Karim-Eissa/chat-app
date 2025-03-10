@@ -112,6 +112,7 @@ export default {
     
     verifyEmail_get: async (req, res) => {
         const { token } = req.params;
+        console.log("token:",token)
         try {
             const user = await User.findOne({ resetPasswordToken: token });
             if (!user) return sendResponse(res, 400, false, "Invalid or expired token");
